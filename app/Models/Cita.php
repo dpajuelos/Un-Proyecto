@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 
 /**
  * Class Cita
- * 
+ *
  * @property int $id_cita
  * @property int $id_rep
  * @property int|null $id_rep_sus
@@ -20,7 +20,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property Carbon|null $fecha_nue
  * @property Carbon|null $hora_nue
  * @property string|null $estado
- * 
+ *
  * @property Representante|null $representante
  *
  * @package App\Models
@@ -37,7 +37,7 @@ class Cita extends Model
 		'fecha' => 'datetime',
 		'hora' => 'datetime',
 		'fecha_nue' => 'datetime',
-		'hora_nue' => 'datetime'
+		'hora_nue' => 'datetime',
 	];
 
 	protected $fillable = [
@@ -47,7 +47,8 @@ class Cita extends Model
 		'hora',
 		'fecha_nue',
 		'hora_nue',
-		'estado'
+		'estado',
+		'descripcion'
 	];
 
 	public function representantePrincipal()

@@ -11,12 +11,12 @@ use Illuminate\Database\Eloquent\Model;
 
 /**
  * Class Representante
- * 
+ *
  * @property int $id_rep
  * @property int $id_minera
  * @property string|null $dni
  * @property string|null $cargo
- * 
+ *
  * @property Persona|null $persona
  * @property Minera $minera
  * @property Collection|Cita[] $citas
@@ -41,7 +41,7 @@ class Representante extends Model
 
 	public function persona()
 	{
-		return $this->belongsTo(Persona::class, 'dni');
+		return $this->belongsTo(Persona::class, 'dni', 'dni');
 	}
 
 	public function minera()

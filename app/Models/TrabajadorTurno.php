@@ -10,10 +10,10 @@ use Illuminate\Database\Eloquent\Model;
 
 /**
  * Class TrabajadorTurno
- * 
+ *
  * @property int $id_trabajador
  * @property int $id_turno
- * 
+ *
  * @property Trabajadore $trabajadore
  * @property Turno $turno
  *
@@ -24,6 +24,11 @@ class TrabajadorTurno extends Model
 	protected $table = 'trabajador_turno';
 	public $incrementing = false;
 	public $timestamps = false;
+
+	protected $fillable = [
+		'id_trabajador',
+		'id_turno'
+	];
 
 	protected $casts = [
 		'id_trabajador' => 'int',

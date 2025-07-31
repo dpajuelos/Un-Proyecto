@@ -3,9 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\HistorialConsulta;
-use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class HistorialConsultaController extends Controller
 {
@@ -16,13 +14,8 @@ class HistorialConsultaController extends Controller
             return redirect('/login')->with('error', 'Debe iniciar sesión para ver el historial.');
         }
 
-        // Obtener el ID del usuario de la sesión
-        $usuarioSesion = session('usuario');
-        $userId = is_array($usuarioSesion) ? $usuarioSesion['id'] : $usuarioSesion->id ?? 1;
-
-        $query = HistorialConsulta::with('user')
-            ->where('user_id', $userId)
-            ->orderBy('created_at', 'desc');
+        // Obtener TODOS los registros sin filtrar por usuario
+        $query = HistorialConsulta::orderBy('created_at', 'desc');
 
         // Filtros
         if ($request->filled('tipo_consulta')) {
@@ -39,9 +32,8 @@ class HistorialConsultaController extends Controller
 
         $historial = $query->paginate(15);
 
-        // Obtener tipos de consulta
-        $tiposConsulta = HistorialConsulta::where('user_id', $userId)
-            ->distinct()
+        // Obtener todos los tipos de consulta sin filtrar por usuario
+        $tiposConsulta = HistorialConsulta::distinct()
             ->pluck('tipo_consulta')
             ->filter();
 
@@ -49,15 +41,11 @@ class HistorialConsultaController extends Controller
             $tiposConsulta = collect(['citas', 'personas', 'mineras', 'trabajadores', 'representantes', 'general']);
         }
 
-        // Estadísticas
+        // Estadísticas de TODOS los registros
         $estadisticas = [
-            'total_registros' => HistorialConsulta::where('user_id', $userId)->count(),
-            'registros_hoy' => HistorialConsulta::where('user_id', $userId)
-                ->whereDate('created_at', today())
-                ->count(),
-            'registros_semana' => HistorialConsulta::where('user_id', $userId)
-                ->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])
-                ->count(),
+            'total_registros' => HistorialConsulta::count(),
+            'registros_hoy' => HistorialConsulta::whereDate('created_at', today())->count(),
+            'registros_semana' => HistorialConsulta::whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])->count(),
         ];
 
         return view('historial.index', compact('historial', 'tiposConsulta', 'estadisticas'));
@@ -65,9 +53,52 @@ class HistorialConsultaController extends Controller
 
     public function show($id)
     {
-        $registro = HistorialConsulta::findOrFail($id);
+        try {
+            if (!session()->has('usuario')) {
+                return response()->json(['error' => 'No autorizado'], 401);
+            }
 
-        return view('historial.show', compact('registro'));
+            $usuarioSesion = session('usuario');
+
+            // Buscar el registro sin filtrar por usuario
+            $registro = HistorialConsulta::find($id);
+
+            if (!$registro) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Registro no encontrado'
+                ], 404);
+            }
+
+            // Agregar información del usuario desde la sesión
+            $registroArray = $registro->toArray();
+            $registroArray['user'] = [
+                'name' => $usuarioSesion['name'] ?? $usuarioSesion['nombre'] ?? 'N/A',
+                'email' => $usuarioSesion['email'] ?? $usuarioSesion['correo'] ?? 'N/A'
+            ];
+
+            // Si es una petición AJAX, devolver JSON
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'registro' => $registroArray
+                ]);
+            }
+
+            // Si no es AJAX, devolver vista (por compatibilidad)
+            return view('historial.show', compact('registro'));
+        } catch (\Exception $e) {
+            \Log::error('Error en HistorialConsultaController@show: ' . $e->getMessage());
+
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Error interno del servidor: ' . $e->getMessage()
+                ], 500);
+            }
+
+            return back()->with('error', 'Error al cargar el registro');
+        }
     }
 
     public function destroy($id)
@@ -76,11 +107,8 @@ class HistorialConsultaController extends Controller
             return redirect('/login')->with('error', 'Debe iniciar sesión.');
         }
 
-        $usuarioSesion = session('usuario');
-        $userId = is_array($usuarioSesion) ? $usuarioSesion['id'] : $usuarioSesion->id ?? 1;
-
-        $consulta = HistorialConsulta::where('user_id', $userId)
-            ->findOrFail($id);
+        // Buscar el registro sin filtrar por usuario
+        $consulta = HistorialConsulta::findOrFail($id);
 
         $consulta->delete();
 
@@ -95,18 +123,12 @@ class HistorialConsultaController extends Controller
             return redirect('/login')->with('error', 'Debe iniciar sesión.');
         }
 
-        $usuarioSesion = session('usuario');
-        $userId = is_array($usuarioSesion) ? $usuarioSesion['id'] : $usuarioSesion->id ?? 1;
-
         $dias = $request->input('dias', 30);
 
-        $eliminados = HistorialConsulta::where('user_id', $userId)
-            ->where('created_at', '<', now()->subDays($dias))
-            ->count();
+        // Eliminar registros de TODOS los usuarios
+        $eliminados = HistorialConsulta::where('created_at', '<', now()->subDays($dias))->count();
 
-        HistorialConsulta::where('user_id', $userId)
-            ->where('created_at', '<', now()->subDays($dias))
-            ->delete();
+        HistorialConsulta::where('created_at', '<', now()->subDays($dias))->delete();
 
         return redirect()
             ->route('historial.index')
@@ -119,23 +141,15 @@ class HistorialConsultaController extends Controller
             return redirect('/login')->with('error', 'Debe iniciar sesión.');
         }
 
-        $usuarioSesion = session('usuario');
-        $userId = is_array($usuarioSesion) ? $usuarioSesion['id'] : $usuarioSesion->id ?? 1;
-
+        // Estadísticas de TODOS los registros
         $estadisticas = [
-            'total_consultas' => HistorialConsulta::where('user_id', $userId)->count(),
-            'consultas_hoy' => HistorialConsulta::where('user_id', $userId)
-                ->whereDate('created_at', today())
-                ->count(),
-            'consultas_semana' => HistorialConsulta::where('user_id', $userId)
-                ->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])
-                ->count(),
-            'por_tipo' => HistorialConsulta::where('user_id', $userId)
-                ->selectRaw('tipo_consulta, COUNT(*) as total')
+            'total_consultas' => HistorialConsulta::count(),
+            'consultas_hoy' => HistorialConsulta::whereDate('created_at', today())->count(),
+            'consultas_semana' => HistorialConsulta::whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])->count(),
+            'por_tipo' => HistorialConsulta::selectRaw('tipo_consulta, COUNT(*) as total')
                 ->groupBy('tipo_consulta')
                 ->pluck('total', 'tipo_consulta'),
-            'actividad_reciente' => HistorialConsulta::where('user_id', $userId)
-                ->selectRaw('DATE(created_at) as fecha, COUNT(*) as total')
+            'actividad_reciente' => HistorialConsulta::selectRaw('DATE(created_at) as fecha, COUNT(*) as total')
                 ->whereBetween('created_at', [now()->subDays(7), now()])
                 ->groupBy('fecha')
                 ->orderBy('fecha')
@@ -143,27 +157,5 @@ class HistorialConsultaController extends Controller
         ];
 
         return view('historial.estadisticas', compact('estadisticas'));
-    }
-
-    // Método para debug
-    public function debug()
-    {
-        if (!session()->has('usuario')) {
-            return redirect('/login')->with('error', 'Debe iniciar sesión.');
-        }
-
-        $usuarioSesion = session('usuario');
-        $userId = is_array($usuarioSesion) ? $usuarioSesion['id'] : $usuarioSesion->id ?? 1;
-
-        $registros = HistorialConsulta::where('user_id', $userId)->get();
-        $total = HistorialConsulta::count();
-
-        dd([
-            'session_usuario' => $usuarioSesion,
-            'user_id' => $userId,
-            'registros_usuario' => $registros->count(),
-            'total_registros' => $total,
-            'registros' => $registros->toArray()
-        ]);
     }
 }

@@ -11,13 +11,13 @@ use Illuminate\Database\Eloquent\Model;
 
 /**
  * Class Persona
- * 
+ *
  * @property string $dni
  * @property string $nombres
  * @property string $apellidos
  * @property string|null $telefono
  * @property string|null $correo
- * 
+ *
  * @property Collection|Representante[] $representantes
  * @property Collection|Trabajadore[] $trabajadores
  *
@@ -29,8 +29,10 @@ class Persona extends Model
 	protected $primaryKey = 'dni';
 	public $incrementing = false;
 	public $timestamps = false;
+	protected $keyType = 'string';
 
 	protected $fillable = [
+		'dni',
 		'nombres',
 		'apellidos',
 		'telefono',

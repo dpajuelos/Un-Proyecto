@@ -5,793 +5,290 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestión de Citas</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-
-    <style>
-        .modal_editar {
-            display: none;
-            position: fixed;
-            z-index: 2000;
-            left: 0;
-            top: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(5px);
-            justify-content: center;
-            align-items: center;
-            animation: fadeIn 0.3s ease-in-out;
-        }
-
-        .modal_editar.show {
-            display: flex;
-        }
-
-        .modal_editar .container {
-            background: linear-gradient(145deg, #ffffff, #f8f9fa);
-            border-radius: 20px;
-            max-width: 600px;
-            width: 95%;
-            padding: 0;
-            box-shadow:
-                0 20px 60px rgba(0, 0, 0, 0.15),
-                0 8px 32px rgba(0, 0, 0, 0.1),
-                inset 0 1px 0 rgba(255, 255, 255, 0.8);
-            position: relative;
-            max-height: 90vh;
-            overflow: hidden;
-            transform: scale(0.9);
-            transition: transform 0.3s ease-in-out;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .modal_editar.show .container {
-            transform: scale(1);
-        }
-
-        .modal_editar .modal-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 1.5rem 2rem;
-            border-radius: 20px 20px 0 0;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .modal_editar .modal-header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(45deg, rgba(255, 255, 255, 0.1) 0%, transparent 100%);
-            pointer-events: none;
-        }
-
-        .modal_editar .modal-header h2 {
-            margin: 0;
-            font-size: 1.5rem;
-            font-weight: 600;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .modal_editar .modal-header h2::before {
-            content: '📅';
-            font-size: 1.2rem;
-        }
-
-        .modal_editar .btn-close {
-            position: absolute;
-            top: 1rem;
-            right: 1.5rem;
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            border-radius: 50%;
-            width: 35px;
-            height: 35px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 1.2rem;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-        }
-
-        .modal_editar .btn-close:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: rotate(90deg) scale(1.1);
-        }
-
-        .modal_editar .modal-body {
-            padding: 2rem;
-            max-height: calc(90vh - 140px);
-            overflow-y: auto;
-        }
-
-        .modal_editar .modal-body::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .modal_editar .modal-body::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
-        }
-
-        .modal_editar .modal-body::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            border-radius: 10px;
-        }
-
-        .modal_editar .form-label {
-            font-weight: 600;
-            color: #495057;
-            margin-bottom: 0.5rem;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .modal_editar .form-control,
-        .modal_editar .form-select {
-            border: 2px solid #e9ecef;
-            border-radius: 12px;
-            padding: 0.75rem 1rem;
-            font-size: 0.95rem;
-            transition: all 0.3s ease;
-            background: #ffffff;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-        }
-
-        .modal_editar .form-control:focus,
-        .modal_editar .form-select:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-            transform: translateY(-1px);
-        }
-
-        .modal_editar .form-control:hover,
-        .modal_editar .form-select:hover {
-            border-color: #764ba2;
-        }
-
-        .modal_editar .mb-3 {
-            position: relative;
-            margin-bottom: 1.5rem;
-        }
-
-        .modal_editar .representante-section {
-            background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%);
-            border-radius: 15px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            border: 1px solid rgba(102, 126, 234, 0.1);
-        }
-
-        .modal_editar .section-title {
-            font-size: 1rem;
-            font-weight: 600;
-            color: #667eea;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .modal_editar .section-title::before {
-            content: '👤';
-            font-size: 1.1rem;
-        }
-
-        .modal_editar .sustituto-section {
-            background: linear-gradient(135deg, #fff8f0 0%, #fff4e6 100%);
-            border-radius: 15px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            border: 1px solid rgba(255, 152, 0, 0.1);
-        }
-
-        .modal_editar .sustituto-section .section-title {
-            color: #ff9800;
-        }
-
-        .modal_editar .sustituto-section .section-title::before {
-            content: '👥';
-        }
-
-        .modal_editar .datetime-section {
-            background: linear-gradient(135deg, #f0fff4 0%, #e8f5e8 100%);
-            border-radius: 15px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            border: 1px solid rgba(76, 175, 80, 0.1);
-        }
-
-        .modal_editar .datetime-section .section-title {
-            color: #4caf50;
-        }
-
-        .modal_editar .datetime-section .section-title::before {
-            content: '🕐';
-        }
-
-        .modal_editar .no-sustituto {
-            background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
-            border-radius: 12px;
-            padding: 1rem;
-            text-align: center;
-            color: #757575;
-            font-style: italic;
-            border: 2px dashed #e0e0e0;
-        }
-
-        .modal_editar .modal-footer {
-            padding: 2px 1px;
-            border-top: 1px solid rgba(0, 0, 0, 0.1);
-            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-            border-radius: 0 0 20px 20px;
-            display: flex;
-            gap: 1rem;
-            justify-content: flex-end;
-        }
-
-        .modal_editar .btn {
-            padding: 0.75rem 2rem;
-            border-radius: 25px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            transition: all 0.3s ease;
-            border: none;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        }
-
-        .modal_editar .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .modal_editar .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
-        }
-
-        .modal_editar .btn-secondary {
-            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
-            color: white;
-        }
-
-        .modal_editar .btn-secondary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(108, 117, 125, 0.3);
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-            }
-
-            to {
-                opacity: 1;
-            }
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateY(-50px) scale(0.9);
-                opacity: 0;
-            }
-
-            to {
-                transform: translateY(0) scale(1);
-                opacity: 1;
-            }
-        }
-
-        .modal_editar .container {
-            animation: slideIn 0.4s ease-out;
-        }
-
-        /* Estilos para Modal de Visualización */
-        .modal_ver {
-            display: none;
-            position: fixed;
-            z-index: 2000;
-            left: 0;
-            top: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(5px);
-            justify-content: center;
-            align-items: center;
-            animation: fadeIn 0.3s ease-in-out;
-        }
-
-        .modal_ver.show {
-            display: flex;
-        }
-
-        .modal_ver .container {
-            background: linear-gradient(145deg, #ffffff, #f8f9fa);
-            border-radius: 20px;
-            max-width: 700px;
-            width: 95%;
-            padding: 0;
-            box-shadow:
-                0 20px 60px rgba(0, 0, 0, 0.15),
-                0 8px 32px rgba(0, 0, 0, 0.1),
-                inset 0 1px 0 rgba(255, 255, 255, 0.8);
-            position: relative;
-            max-height: 90vh;
-            overflow: hidden;
-            transform: scale(0.9);
-            transition: transform 0.3s ease-in-out;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .modal_ver.show .container {
-            transform: scale(1);
-        }
-
-        .modal_ver .modal-header {
-            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
-            color: white;
-            padding: 1.5rem 2rem;
-            border-radius: 20px 20px 0 0;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .modal_ver .modal-header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(45deg, rgba(255, 255, 255, 0.1) 0%, transparent 100%);
-            pointer-events: none;
-        }
-
-        .modal_ver .modal-header h2 {
-            margin: 0;
-            font-size: 1.5rem;
-            font-weight: 600;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .modal_ver .modal-header h2::before {
-            content: '👁️';
-            font-size: 1.2rem;
-        }
-
-        .modal_ver .btn-close {
-            position: absolute;
-            top: 1rem;
-            right: 1.5rem;
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            border-radius: 50%;
-            width: 35px;
-            height: 35px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 1.2rem;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-        }
-
-        .modal_ver .btn-close:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: rotate(90deg) scale(1.1);
-        }
-
-        .modal_ver .modal-body {
-            padding: 2rem;
-            max-height: calc(90vh - 140px);
-            overflow-y: auto;
-        }
-
-        .modal_ver .info-card {
-            background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%);
-            border-radius: 15px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            border: 1px solid rgba(102, 126, 234, 0.1);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-        }
-
-        .modal_ver .info-card.minera {
-            background: linear-gradient(135deg, #fff8f0 0%, #fff4e6 100%);
-            border: 1px solid rgba(255, 152, 0, 0.1);
-        }
-
-        .modal_ver .info-card.horario {
-            background: linear-gradient(135deg, #f0fff4 0%, #e8f5e8 100%);
-            border: 1px solid rgba(76, 175, 80, 0.1);
-        }
-
-        .modal_ver .info-card.estado {
-            background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
-            border: 1px solid rgba(156, 39, 176, 0.1);
-        }
-
-        .modal_ver .card-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #667eea;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            border-bottom: 2px solid rgba(102, 126, 234, 0.1);
-            padding-bottom: 0.5rem;
-        }
-
-        .modal_ver .info-card.minera .card-title {
-            color: #ff9800;
-            border-bottom-color: rgba(255, 152, 0, 0.1);
-        }
-
-        .modal_ver .info-card.horario .card-title {
-            color: #4caf50;
-            border-bottom-color: rgba(76, 175, 80, 0.1);
-        }
-
-        .modal_ver .info-card.estado .card-title {
-            color: #9c27b0;
-            border-bottom-color: rgba(156, 39, 176, 0.1);
-        }
-
-        .modal_ver .info-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.5rem 0;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-        }
-
-        .modal_ver .info-row:last-child {
-            border-bottom: none;
-        }
-
-        .modal_ver .info-label {
-            font-weight: 600;
-            color: #495057;
-            font-size: 0.9rem;
-        }
-
-        .modal_ver .info-value {
-            color: #6c757d;
-            font-size: 0.95rem;
-            text-align: right;
-            max-width: 60%;
-        }
-
-        .modal_ver .estado-badge {
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .modal_ver .estado-pendiente {
-            background: linear-gradient(135deg, #ffc107, #ff8f00);
-            color: white;
-        }
-
-        .modal_ver .estado-confirmada {
-            background: linear-gradient(135deg, #28a745, #20c997);
-            color: white;
-        }
-
-        .modal_ver .estado-cancelada {
-            background: linear-gradient(135deg, #dc3545, #c82333);
-            color: white;
-        }
-
-        .modal_ver .estado-reprogramada {
-            background: linear-gradient(135deg, #17a2b8, #138496);
-            color: white;
-        }
-
-        .modal_ver .no-data {
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            border-radius: 10px;
-            padding: 1rem;
-            text-align: center;
-            color: #6c757d;
-            font-style: italic;
-            border: 2px dashed #dee2e6;
-        }
-
-        .modal_ver .modal-footer {
-            padding: 1.5rem 2rem;
-            border-top: 1px solid rgba(0, 0, 0, 0.1);
-            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-            border-radius: 0 0 20px 20px;
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .modal_ver .btn-info {
-            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
-            color: white;
-            padding: 0.75rem 2.5rem;
-            border-radius: 25px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            transition: all 0.3s ease;
-            border: none;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            min-width: 150px;
-            justify-content: center;
-        }
-
-        .modal_ver .btn-info:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(23, 162, 184, 0.3);
-            background: linear-gradient(135deg, #138496 0%, #117a8b 100%);
-        }
-
-        .modal_ver .btn-info:active {
-            transform: translateY(0);
-            box-shadow: 0 4px 15px rgba(23, 162, 184, 0.2);
-        }
-
-        @media (max-width: 768px) {
-            .modal_editar .container {
-                width: 95%;
-                margin: 1rem;
-            }
-
-            .modal_editar .modal-header,
-            .modal_editar .modal-body,
-            .modal_editar .modal-footer {
-                padding: 1rem;
-            }
-
-            .modal_editar .representante-section,
-            .modal_editar .sustituto-section,
-            .modal_editar .datetime-section {
-                padding: 1rem;
-            }
-
-            .modal_ver .container {
-                width: 95%;
-                margin: 1rem;
-            }
-
-            .modal_ver .modal-header,
-            .modal_ver .modal-body,
-            .modal_ver .modal-footer {
-                padding: 1rem;
-            }
-
-            .modal_ver .info-card {
-                padding: 1rem;
-            }
-        }
-    </style>
+    @vite(['resources/js/citas/index.js', 'resources/css/citas/index.css'])
 </head>
 
 <body>
-    <div class="container-fluid py-4">
-        <div class="row">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h4 class="mb-0">
-                            <i class="fas fa-calendar-alt me-2"></i>
-                            Gestión de Citas
-                        </h4>
+    <div class="modern-container">
+        <!-- Decoración de fondo -->
+        <div class="bg-decoration"></div>
 
-                        <!-- Botón Nueva Cita -->
-                        <a href="javascript:void(0);" class="btn btn-primary" onclick="abrirModalNuevaCita()">
-                            <i class="fas fa-plus me-1"></i>
-                            Nueva Cita
-                        </a>
-                        <a href="{{ url('/home') }}" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left me-1"></i>
-                            Volver
-                        </a>
+        <!-- Header Section -->
+        <div class="header-section">
+            <div class="header-content">
+                <div class="header-text">
+                    <div class="icon-wrapper">
+                        <i class="fas fa-calendar-alt"></i>
                     </div>
-
-                    <div class="card-body">
-                        <!-- Filtros -->
-                        <form method="GET" class="mb-4">
-                            <div class="row g-3">
-                                <div class="col-md-3">
-                                    <label class="form-label">Estado</label>
-                                    <select name="estado" class="form-select">
-                                        <option value="">Todos</option>
-                                        <option value="pendiente"
-                                            {{ request('estado') == 'pendiente' ? 'selected' : '' }}>Pendiente</option>
-                                        <option value="confirmada"
-                                            {{ request('estado') == 'confirmada' ? 'selected' : '' }}>Confirmada
-                                        </option>
-                                        <option value="cancelada"
-                                            {{ request('estado') == 'cancelada' ? 'selected' : '' }}>Cancelada</option>
-                                        <option value="reprogramada"
-                                            {{ request('estado') == 'reprogramada' ? 'selected' : '' }}>Reprogramada
-                                        </option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label">Fecha</label>
-                                    <input type="date" name="fecha" class="form-control"
-                                        value="{{ request('fecha') }}">
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Buscar</label>
-                                    <input type="text" name="buscar" class="form-control"
-                                        placeholder="ID Rep o ID Rep Sus" value="{{ request('buscar') }}">
-                                </div>
-                                <div class="col-md-2">
-                                    <label class="form-label">&nbsp;</label>
-                                    <div class="d-grid">
-                                        <button type="submit" class="btn btn-outline-primary">
-                                            <i class="fas fa-search"></i> Filtrar
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </form>
-
-                        <!-- Mensajes -->
-                        @if (session('success'))
-                            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                                <i class="fas fa-check-circle me-2"></i>
-                                {{ session('success') }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                            </div>
-                        @endif
-
-                        <!-- Tabla de Citas -->
-                        <div class="table-responsive">
-                            <table class="table table-striped table-hover">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th>Representante</th>
-                                        <th>DNI</th>
-                                        <th>Cargo</th>
-                                        <th>Fecha Original</th>
-                                        <th> Hora Original</th>
-                                        <th>Nueva Fecha</th>
-                                        <th>Nueva Hora</th>
-                                        <th>Estado</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @forelse($citas as $cita)
-                                        <tr>
-
-                                            <td>
-                                                @if ($cita->representantePrincipal)
-                                                    {{ $cita->representantePrincipal->persona->nombres ?? '' }}
-                                                    {{ $cita->representantePrincipal->persona->apellidos ?? '' }}
-                                                @endif
-                                            </td>
-                                            <td>
-                                                @if ($cita->representantePrincipal)
-                                                    {{ $cita->representantePrincipal->persona->dni ?? '' }}
-                                                @endif
-                                            </td>
-                                            <td>{{ $cita->representantePrincipal->cargo ?? '' }}</td>
-                                            <td>{{ $cita->fecha ? \Carbon\Carbon::parse($cita->fecha)->format('d/m/Y') : '-' }}
-                                            </td>
-                                            <td>{{ $cita->hora ? \Carbon\Carbon::parse($cita->hora)->format('H:i') : '-' }}
-                                            </td>
-                                            <td>
-                                                {{ $cita->fecha_nue ? \Carbon\Carbon::parse($cita->fecha_nue)->format('d/m/Y') : '-' }}
-                                            </td>
-                                            <td>
-                                                {{ $cita->hora_nue ? \Carbon\Carbon::parse($cita->hora_nue)->format('H:i') : '-' }}
-                                            </td>
-                                            <td>
-                                                <span
-                                                    class="badge 
-                                                    @switch($cita->estado)
-                                                        @case('pendiente') bg-warning @break
-                                                        @case('confirmada') bg-success @break
-                                                        @case('cancelada') bg-danger @break
-                                                        @case('reprogramada') bg-info @break
-                                                    @endswitch
-                                                ">
-                                                    {{ ucfirst($cita->estado) }}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <div class="btn-group" role="group">
-                                                    <button type="button" class="btn btn-sm btn-outline-info"
-                                                        onclick="abrirModalVerCita(
-                                                            {{ $cita->id_cita }},
-                                                            '{{ $cita->representantePrincipal->persona->nombres ?? '' }}',
-                                                            '{{ $cita->representantePrincipal->persona->apellidos ?? '' }}',
-                                                            '{{ $cita->representantePrincipal->persona->dni ?? '' }}',
-                                                            '{{ $cita->representantePrincipal->cargo ?? '' }}',
-                                                            '{{ $cita->representantePrincipal->minera->nombre_minera ?? '' }}',
-                                                            '{{ $cita->representantePrincipal->minera->ruc ?? '' }}',
-                                                            '{{ $cita->representantePrincipal->minera->direccion ?? '' }}',
-                                                            '{{ $cita->representantePrincipal->minera->telefono_contacto ?? '' }}',
-                                                            '{{ $cita->representantePrincipal->minera->correo_contacto ?? '' }}',
-                                                            '{{ $cita->representanteSustituto ? $cita->representanteSustituto->persona->nombres : '' }}',
-                                                            '{{ $cita->representanteSustituto ? $cita->representanteSustituto->persona->apellidos : '' }}',
-                                                            '{{ $cita->representanteSustituto ? $cita->representanteSustituto->persona->dni : '' }}',
-                                                            '{{ $cita->representanteSustituto ? $cita->representanteSustituto->cargo : '' }}',
-                                                            '{{ $cita->fecha }}',
-                                                            '{{ $cita->hora ? \Carbon\Carbon::parse($cita->hora)->format('H:i') : '' }}',
-                                                            '{{ $cita->fecha_nue }}',
-                                                            '{{ $cita->hora_nue ? \Carbon\Carbon::parse($cita->hora_nue)->format('H:i') : '' }}',
-                                                            '{{ $cita->estado }}',
-                                                            '{{ $cita->descripcion ?? '' }}'
-                                                        )">
-                                                        <i class="fas fa-eye"></i>
-                                                    </button>
-
-                                                    <a href="javascript:void(0);" class="btn btn-sm btn-outline-warning"
-                                                        onclick="abrirModalEditarCita(
-                                                            {{ $cita->id_cita }},
-                                                            {{ $cita->id_rep }},
-                                                            {{ $cita->id_rep_sus ?? 'null' }},
-                                                            '{{ $cita->fecha ? \Carbon\Carbon::parse($cita->fecha)->format('Y-m-d') : '' }}',
-                                                            '{{ $cita->hora ? \Carbon\Carbon::parse($cita->hora)->format('H:i') : '' }}',
-                                                            '{{ $cita->estado }}',
-                                                            '{{ $cita->representantePrincipal->persona->nombres ?? '' }}',
-                                                            '{{ $cita->representantePrincipal->persona->apellidos ?? '' }}',
-                                                            '{{ $cita->representantePrincipal->persona->dni ?? '' }}',
-                                                            '{{ $cita->representanteSustituto ? $cita->representanteSustituto->persona->nombres : '' }}',
-                                                            '{{ $cita->representanteSustituto ? $cita->representanteSustituto->persona->apellidos : '' }}',
-                                                            '{{ $cita->representanteSustituto ? $cita->representanteSustituto->persona->dni : '' }}',
-                                                            '{{ $cita->descripcion ?? '' }}',
-                                                            '{{ $cita->fecha_nue ? \Carbon\Carbon::parse($cita->fecha_nue)->format('Y-m-d') : '' }}',
-                                                            '{{ $cita->hora_nue ? \Carbon\Carbon::parse($cita->hora_nue)->format('H:i') : '' }}'
-                                                        )">
-                                                        <i class="fas fa-edit"></i>
-                                                    </a>
-                                                    <button type="button" class="btn btn-sm btn-outline-danger"
-                                                        onclick="confirmarEliminar({{ $cita->id_cita }})">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="9" class="text-center py-4">
-                                                <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
-                                                <p class="text-muted">No hay citas registradas</p>
-                                            </td>
-                                        </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <!-- Paginación -->
-                        {{ $citas->links() }}
+                    <div>
+                        <h1 class="main-title">Gestión de Citas</h1>
+                        <p class="subtitle">Administra y organiza las citas de manera eficiente</p>
                     </div>
                 </div>
+                <div class="header-actions">
+                    <button onclick="abrirModalNuevaCita()" class="btn-modern btn-primary">
+                        <i class="fas fa-plus"></i>
+                        Nueva Cita
+                    </button>
+                    <a href="{{ url('/home') }}" class="btn-modern btn-secondary">
+                        <i class="fas fa-arrow-left"></i>
+                        Volver
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content Card -->
+        <div class="content-card">
+            <div class="content-header">
+                <div class="content-title">
+                    <h2>Lista de Citas</h2>
+                    <span class="record-count">{{ $citas->count() }} citas registradas</span>
+                </div>
+                <div class="content-actions">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Buscar citas..." id="searchInput">
+                    </div>
+                    <button class="filter-btn" type="button">
+                        <i class="fas fa-filter"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Filtros -->
+            <div style="padding: 1.5rem; border-bottom: 1px solid var(--border-color);">
+                <form method="GET" class="mb-0">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Estado</label>
+                            <select name="estado" class="form-select">
+                                <option value="">Todos</option>
+                                <option value="pendiente" {{ request('estado') == 'pendiente' ? 'selected' : '' }}>
+                                    Pendiente</option>
+                                <option value="confirmada" {{ request('estado') == 'confirmada' ? 'selected' : '' }}>
+                                    Confirmada
+                                </option>
+                                <option value="cancelada" {{ request('estado') == 'cancelada' ? 'selected' : '' }}>
+                                    Cancelada</option>
+                                <option value="reprogramada"
+                                    {{ request('estado') == 'reprogramada' ? 'selected' : '' }}>Reprogramada
+                                </option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Fecha</label>
+                            <input type="date" name="fecha" class="form-control" value="{{ request('fecha') }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Buscar</label>
+                            <input type="text" name="buscar" class="form-control" placeholder="ID Rep o ID Rep Sus"
+                                value="{{ request('buscar') }}">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">&nbsp;</label>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-outline-primary">
+                                    <i class="fas fa-search"></i> Filtrar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Mensajes -->
+            @if (session('success'))
+                <div style="padding: 1.5rem; padding-bottom: 0;">
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="fas fa-check-circle me-2"></i>
+                        {{ session('success') }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                </div>
+            @endif
+
+            <div class="table-wrapper">
+                <div class="table-container">
+                    <table class="modern-table">
+                        <thead>
+                            <tr>
+                                <th>Representante</th>
+                                <th>DNI</th>
+                                <th>Cargo</th>
+                                <th>Fecha Original</th>
+                                <th>Hora Original</th>
+                                <th>Nueva Fecha</th>
+                                <th>Nueva Hora</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($citas as $cita)
+                                <tr>
+                                    <td>
+                                        <div class="table-user">
+                                            <div class="user-avatar">
+                                                <img class="avatar"
+                                                    src="https://ui-avatars.com/api/?name={{ urlencode(($cita->representantePrincipal->persona->nombres ?? '') . ' ' . ($cita->representantePrincipal->persona->apellidos ?? '')) }}&background=6366f1&color=fff"
+                                                    alt="Avatar">
+                                            </div>
+                                            <div class="user-info">
+                                                <div class="user-name">
+                                                    @if ($cita->representantePrincipal)
+                                                        {{ $cita->representantePrincipal->persona->nombres ?? '' }}
+                                                        {{ $cita->representantePrincipal->persona->apellidos ?? '' }}
+                                                    @endif
+                                                </div>
+                                                <div class="user-email">
+                                                    DNI: {{ $cita->representantePrincipal->persona->dni ?? '' }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="dni-badge">
+                                            {{ $cita->representantePrincipal->persona->dni ?? '' }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="role-badge">
+                                            {{ $cita->representantePrincipal->cargo ?? '' }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @if ($cita->fecha)
+                                            <span class="fw-bold">
+                                                {{ \Carbon\Carbon::parse($cita->fecha)->format('d/m/Y') }}
+                                            </span>
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if ($cita->hora)
+                                            <span class="badge bg-info">
+                                                {{ \Carbon\Carbon::parse($cita->hora)->format('H:i') }}
+                                            </span>
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if ($cita->fecha_nue)
+                                            <span class="fw-bold">
+                                                {{ \Carbon\Carbon::parse($cita->fecha_nue)->format('d/m/Y') }}
+                                            </span>
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if ($cita->hora_nue)
+                                            <span class="badge bg-success">
+                                                {{ \Carbon\Carbon::parse($cita->hora_nue)->format('H:i') }}
+                                            </span>
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        <span class="estado-badge estado-{{ strtolower($cita->estado) }}">
+                                            {{ ucfirst($cita->estado) }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="table-actions">
+                                            <button type="button" class="table-btn view"
+                                                onclick="abrirModalVerCita(
+                                                    {{ $cita->id_cita }},
+                                                    '{{ $cita->representantePrincipal->persona->nombres ?? '' }}',
+                                                    '{{ $cita->representantePrincipal->persona->apellidos ?? '' }}',
+                                                    '{{ $cita->representantePrincipal->persona->dni ?? '' }}',
+                                                    '{{ $cita->representantePrincipal->cargo ?? '' }}',
+                                                    '{{ $cita->representantePrincipal->persona->telefono ?? '' }}',
+                                                    '{{ $cita->representantePrincipal->persona->correo ?? '' }}',
+                                                    '{{ $cita->representantePrincipal->minera->nombre_minera ?? '' }}',
+                                                    '{{ $cita->representantePrincipal->minera->ruc ?? '' }}',
+                                                    '{{ $cita->representantePrincipal->minera->direccion ?? '' }}',
+                                                    '{{ $cita->representantePrincipal->minera->telefono_contacto ?? '' }}',
+                                                    '{{ $cita->representantePrincipal->minera->correo_contacto ?? '' }}',
+                                                    '{{ $cita->representanteSustituto ? $cita->representanteSustituto->persona->nombres : '' }}',
+                                                    '{{ $cita->representanteSustituto ? $cita->representanteSustituto->persona->apellidos : '' }}',
+                                                    '{{ $cita->representanteSustituto ? $cita->representanteSustituto->persona->dni : '' }}',
+                                                    '{{ $cita->representanteSustituto ? $cita->representanteSustituto->cargo : '' }}',
+                                                    '{{ $cita->representanteSustituto ? $cita->representanteSustituto->persona->telefono : '' }}',
+                                                    '{{ $cita->representanteSustituto ? $cita->representanteSustituto->persona->correo : '' }}',
+                                                    '{{ $cita->fecha }}',
+                                                    '{{ $cita->hora ? \Carbon\Carbon::parse($cita->hora)->format('H:i') : '' }}',
+                                                    '{{ $cita->fecha_nue }}',
+                                                    '{{ $cita->hora_nue ? \Carbon\Carbon::parse($cita->hora_nue)->format('H:i') : '' }}',
+                                                    '{{ $cita->estado }}',
+                                                    '{{ $cita->descripcion ?? '' }}'
+                                                )"
+                                                title="Ver detalles">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+
+                                            <button class="table-btn edit"
+                                                onclick="abrirModalEditarCita(
+                                                    {{ $cita->id_cita }},
+                                                    {{ $cita->id_rep }},
+                                                    {{ $cita->id_rep_sus ?? 'null' }},
+                                                    '{{ $cita->fecha ? \Carbon\Carbon::parse($cita->fecha)->format('Y-m-d') : '' }}',
+                                                    '{{ $cita->hora ? \Carbon\Carbon::parse($cita->hora)->format('H:i') : '' }}',
+                                                    '{{ $cita->estado }}',
+                                                    '{{ $cita->representantePrincipal->persona->nombres ?? '' }}',
+                                                    '{{ $cita->representantePrincipal->persona->apellidos ?? '' }}',
+                                                    '{{ $cita->representantePrincipal->persona->dni ?? '' }}',
+                                                    '{{ $cita->representantePrincipal->cargo ?? '' }}',
+                                                    '{{ $cita->representantePrincipal->persona->telefono ?? '' }}',
+                                                    '{{ $cita->representantePrincipal->persona->correo ?? '' }}',
+                                                    '{{ $cita->representanteSustituto ? $cita->representanteSustituto->persona->nombres : '' }}',
+                                                    '{{ $cita->representanteSustituto ? $cita->representanteSustituto->persona->apellidos : '' }}',
+                                                    '{{ $cita->representanteSustituto ? $cita->representanteSustituto->persona->dni : '' }}',
+                                                    '{{ $cita->representanteSustituto ? $cita->representanteSustituto->cargo : '' }}',
+                                                    '{{ $cita->representanteSustituto ? $cita->representanteSustituto->persona->telefono : '' }}',
+                                                    '{{ $cita->representanteSustituto ? $cita->representanteSustituto->persona->correo : '' }}',
+                                                    '{{ $cita->descripcion ?? '' }}',
+                                                    '{{ $cita->fecha_nue ? \Carbon\Carbon::parse($cita->fecha_nue)->format('Y-m-d') : '' }}',
+                                                    '{{ $cita->hora_nue ? \Carbon\Carbon::parse($cita->hora_nue)->format('H:i') : '' }}'
+                                                )"
+                                                title="Edita    r cita">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+
+                                            <button type="button" class="table-btn delete"
+                                                onclick="confirmarEliminar({{ $cita->id_cita }})"
+                                                title="Eliminar cita">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="9" class="text-center py-5">
+                                        <div class="text-muted">
+                                            <i class="fas fa-calendar-times fa-3x mb-3"></i>
+                                            <h5>No hay citas registradas</h5>
+                                            <p>Comienza creando una nueva cita</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Paginación -->
+            <div style="padding: 1.5rem;">
+                {{ $citas->links() }}
             </div>
         </div>
     </div>
@@ -820,7 +317,7 @@
     </div>
 
     <!-- Modal para Editar Cita -->
-    <div class="modal_editar" id="modalEditarCita">
+    <div class="modal_editar" id="modalEditarCita" style="display: none;">
         <div class="container">
             <div class="modal-header">
                 <h2>Editar Cita</h2>
@@ -837,61 +334,136 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label class="form-label">Nombre</label>
+                                    <label class="form-label">Nombre <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" id="input_nombre_rep"
                                         name="nombre_rep" required>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label class="form-label">Apellido</label>
+                                    <label class="form-label">Apellido <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" id="input_apellido_rep"
                                         name="apellido_rep" required>
                                 </div>
                             </div>
-                            <div class="col-md-12">
+                            <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label class="form-label">DNI</label>
+                                    <label class="form-label">DNI <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" id="input_dni_rep" name="dni_rep"
                                         required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Cargo <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="input_cargo_rep" name="cargo_rep"
+                                        required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Teléfono</label>
+                                    <input type="text" class="form-control" id="input_telefono_rep"
+                                        name="telefono_rep">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Correo</label>
+                                    <input type="email" class="form-control" id="input_correo_rep"
+                                        name="correo_rep">
                                 </div>
                             </div>
                         </div>
                         <input type="hidden" id="input_id_rep" name="id_rep">
                     </div>
 
+                    <!-- Checkbox para Representante Sustituto -->
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="checkbox_sustituto"
+                                name="tiene_sustituto" value="1" onchange="toggleSustituto()">
+                            <label class="form-check-label" for="checkbox_sustituto">
+                                <i class="fas fa-user-plus me-2"></i>
+                                Agregar Representante Sustituto
+                            </label>
+                        </div>
+                    </div>
+
                     <!-- Sección Representante Sustituto -->
-                    <div id="sustitutoCampos" class="sustituto-section">
+                    <div id="sustitutoCampos" class="sustituto-section" style="display: none;">
                         <div class="section-title">Representante Sustituto</div>
                         <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">Nombre</label>
-                                    <input type="text" class="form-control" id="input_nombre_sus"
-                                        name="nombre_sus">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">Apellido</label>
-                                    <input type="text" class="form-control" id="input_apellido_sus"
-                                        name="apellido_sus">
-                                </div>
-                            </div>
+                            <!-- DNI como primer campo -->
                             <div class="col-md-12">
                                 <div class="mb-3">
-                                    <label class="form-label">DNI</label>
-                                    <input type="text" class="form-control" id="input_dni_sus" name="dni_sus">
+                                    <label class="form-label">DNI <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="input_dni_sus" name="dni_sus"
+                                            maxlength="8" placeholder="Ingrese DNI para buscar..."
+                                            oninput="buscarPersonaPorDni(this.value, 'sus')">
+                                        <span class="input-group-text" id="dni_sus_status">
+                                            <i class="fas fa-search text-muted"></i>
+                                        </span>
+                                    </div>
+                                    <small class="form-text" id="dni_sus_message"></small>
+                                </div>
+                            </div>
+
+                            <!-- Nombres y Apellidos en la misma fila -->
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Nombres <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="input_nombre_sus"
+                                        name="nombre_sus" placeholder="Nombres del representante">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Apellidos <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="input_apellido_sus"
+                                        name="apellido_sus" placeholder="Apellidos del representante">
+                                </div>
+                            </div>
+
+                            <!-- Cargo y Teléfono en la misma fila -->
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Cargo <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="input_cargo_sus" name="cargo_sus"
+                                        placeholder="Cargo del representante">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Teléfono</label>
+                                    <input type="text" class="form-control" id="input_telefono_sus"
+                                        name="telefono_sus" placeholder="Teléfono (opcional)">
+                                </div>
+                            </div>
+
+                            <!-- Correo en fila completa -->
+                            <div class="col-md-12">
+                                <div class="mb-3">
+                                    <label class="form-label">Correo</label>
+                                    <input type="email" class="form-control" id="input_correo_sus"
+                                        name="correo_sus" placeholder="Correo electrónico (opcional)">
                                 </div>
                             </div>
                         </div>
-                        <input type="hidden" id="input_id_rep_sus" name="id_rep_sus">
+
+                        <!-- Indicador de estado de la búsqueda -->
+                        <div class="alert alert-info" id="persona_sus_status" style="display: none;">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <span id="persona_sus_message"></span>
+                        </div>
                     </div>
 
-                    <div id="noSustituto" class="no-sustituto" style="display:none;">
+                    <div id="noSustituto" class="no-sustituto">
                         <span>📋 No se añadió representante sustituto para esta cita</span>
                     </div>
 
+                    <!-- Resto del formulario permanece igual -->
                     <!-- Sección Fecha y Hora Original (Solo lectura) -->
                     <div class="datetime-section">
                         <div class="section-title">📅 Cita Original (No editable)</div>
@@ -970,7 +542,7 @@
     </div>
 
     <!-- Modal Nueva Cita -->
-    <div class="modal_editar" id="modalNuevaCita">
+    <div class="modal_editar" id="modalNuevaCita" style="display: none;">
         <div class="container">
             <div class="modal-header">
                 <h2>Nueva Cita</h2>
@@ -984,32 +556,82 @@
                     <div class="representante-section">
                         <div class="section-title">Representante Principal</div>
                         <div class="mb-3">
-                            <label class="form-label">Seleccionar Representante</label>
+                            <label class="form-label">Seleccionar Representante <span
+                                    class="text-danger">*</span></label>
                             <select class="form-select" id="nuevo_id_rep" name="id_rep" required>
                                 <option value="">Seleccione un representante</option>
                                 @foreach ($representantes as $rep)
                                     <option value="{{ $rep->id_rep }}">{{ $rep->persona->nombres }}
-                                        {{ $rep->persona->apellidos }}
+                                        {{ $rep->persona->apellidos }} - {{ $rep->persona->dni }}
                                     </option>
                                 @endforeach
                             </select>
                         </div>
                     </div>
 
-                    <!-- Sección Representante Sustituto -->
-                    <div class="sustituto-section">
-                        <div class="section-title">Representante Sustituto (Opcional)</div>
-                        <div class="mb-3">
-                            <label class="form-label">Seleccionar Sustituto</label>
-                            <select class="form-select" id="nuevo_id_rep_sus" name="id_rep_sus">
-                                <option value="">Ninguno</option>
-                                @foreach ($representantes as $rep)
-                                    <option value="{{ $rep->id_rep }}">{{ $rep->persona->nombres }}
-                                        {{ $rep->persona->apellidos }}
-                                    </option>
-                                @endforeach
-                            </select>
+                    <!-- Checkbox para Representante Sustituto -->
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="nuevo_checkbox_sustituto"
+                                name="tiene_sustituto" value="1" onchange="toggleNuevoSustituto()">
+                            <label class="form-check-label" for="nuevo_checkbox_sustituto">
+                                <i class="fas fa-user-plus me-2"></i>
+                                Agregar Representante Sustituto
+                            </label>
                         </div>
+                    </div>
+
+                    <!-- Sección Representante Sustituto -->
+                    <div id="nuevoSustitutoCampos" class="sustituto-section" style="display: none;">
+                        <div class="section-title">Representante Sustituto</div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Nombres <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="nuevo_nombre_sus"
+                                        name="nombre_sus">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Apellidos <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="nuevo_apellido_sus"
+                                        name="apellido_sus">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">DNI <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="nuevo_dni_sus" name="dni_sus"
+                                        maxlength="8">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Cargo <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="nuevo_cargo_sus"
+                                        name="cargo_sus">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Teléfono</label>
+                                    <input type="text" class="form-control" id="nuevo_telefono_sus"
+                                        name="telefono_sus">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Correo</label>
+                                    <input type="email" class="form-control" id="nuevo_correo_sus"
+                                        name="correo_sus">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="nuevoNoSustituto" class="no-sustituto">
+                        <span>📋 No se añadirá representante sustituto para esta cita</span>
                     </div>
 
                     <!-- Sección Fecha y Hora -->
@@ -1018,14 +640,14 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label class="form-label">Fecha</label>
+                                    <label class="form-label">Fecha <span class="text-danger">*</span></label>
                                     <input type="date" class="form-control" id="nuevo_fecha" name="fecha"
                                         required>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label class="form-label">Hora</label>
+                                    <label class="form-label">Hora <span class="text-danger">*</span></label>
                                     <input type="time" class="form-control" id="nuevo_hora" name="hora"
                                         required>
                                 </div>
@@ -1084,6 +706,14 @@
                         <span class="info-label">Cargo:</span>
                         <span class="info-value" id="ver_cargo_rep"></span>
                     </div>
+                    <div class="info-row">
+                        <span class="info-label">Teléfono:</span>
+                        <span class="info-value" id="ver_telefono_rep"></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Correo:</span>
+                        <span class="info-value" id="ver_correo_rep"></span>
+                    </div>
                 </div>
 
                 <!-- Información de la Minera -->
@@ -1129,6 +759,14 @@
                     <div class="info-row">
                         <span class="info-label">Cargo:</span>
                         <span class="info-value" id="ver_cargo_sus"></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Teléfono:</span>
+                        <span class="info-value" id="ver_telefono_sus"></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Correo:</span>
+                        <span class="info-value" id="ver_correo_sus"></span>
                     </div>
                 </div>
 
@@ -1193,187 +831,6 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        function confirmarEliminar(id) {
-            document.getElementById('formEliminar').action = '/citas/' + id;
-            new bootstrap.Modal(document.getElementById('modalEliminar')).show();
-        }
-
-        function abrirModalEditarCita(id_cita, id_rep, id_rep_sus, fecha, hora, estado, nombre_rep, apellido_rep, dni_rep,
-            nombre_sus, apellido_sus, dni_sus, descripcion, fecha_nue, hora_nue) {
-
-            console.log('Datos recibidos:', {
-                fecha,
-                hora,
-                fecha_nue,
-                hora_nue
-            }); // Para debugging
-
-            // Información básica
-            document.getElementById('input_id_rep').value = id_rep;
-            document.getElementById('input_nombre_rep').value = nombre_rep || '';
-            document.getElementById('input_apellido_rep').value = apellido_rep || '';
-            document.getElementById('input_dni_rep').value = dni_rep || '';
-            document.getElementById('input_id_rep_sus').value = id_rep_sus || '';
-            document.getElementById('input_estado').value = estado;
-            document.getElementById('input_descripcion').value = descripcion || '';
-
-            // Fechas y horas originales (readonly)
-            document.getElementById('input_fecha_original').value = fecha || '';
-            document.getElementById('input_hora_original').value = hora || '';
-
-            // Fechas y horas nuevas (editables)
-            document.getElementById('input_fecha_nueva').value = fecha_nue || '';
-            document.getElementById('input_hora_nueva').value = hora_nue || '';
-
-            // Configurar fecha mínima para la nueva fecha
-            if (fecha) {
-                // Añadir un día a la fecha original para que sea posterior
-                const fechaOriginal = new Date(fecha);
-                fechaOriginal.setDate(fechaOriginal.getDate() + 1);
-                const fechaMinima = fechaOriginal.toISOString().split('T')[0];
-                document.getElementById('input_fecha_nueva').min = fechaMinima;
-            }
-
-            // Remover event listeners anteriores y añadir nuevo
-            const inputFechaNueva = document.getElementById('input_fecha_nueva');
-            inputFechaNueva.removeEventListener('change', validarFechaNueva);
-            inputFechaNueva.addEventListener('change', validarFechaNueva);
-
-            // Configurar acción del formulario
-            document.getElementById('formEditarCita').action = '/citas/' + id_cita;
-
-            // Manejo del representante sustituto
-            if (id_rep_sus && id_rep_sus !== 'null') {
-                document.getElementById('sustitutoCampos').style.display = '';
-                document.getElementById('noSustituto').style.display = 'none';
-                document.getElementById('input_nombre_sus').value = nombre_sus || '';
-                document.getElementById('input_apellido_sus').value = apellido_sus || '';
-                document.getElementById('input_dni_sus').value = dni_sus || '';
-            } else {
-                document.getElementById('sustitutoCampos').style.display = 'none';
-                document.getElementById('noSustituto').style.display = '';
-                document.getElementById('input_nombre_sus').value = '';
-                document.getElementById('input_apellido_sus').value = '';
-                document.getElementById('input_dni_sus').value = '';
-            }
-
-            document.getElementById('modalEditarCita').classList.add('show');
-        }
-
-        // Función separada para validar fecha nueva
-        function validarFechaNueva() {
-            const fechaOriginal = document.getElementById('input_fecha_original').value;
-            const fechaNueva = this.value;
-
-            if (fechaNueva && fechaOriginal && fechaNueva <= fechaOriginal) {
-                alert('La nueva fecha debe ser posterior a la fecha original (' +
-                    new Date(fechaOriginal).toLocaleDateString('es-ES') + ')');
-                this.value = '';
-            }
-        }
-
-        function limpiarFechasNuevas() {
-            document.getElementById('input_fecha_nueva').value = '';
-            document.getElementById('input_hora_nueva').value = '';
-        }
-
-        function cerrarModalEditarCita() {
-            document.getElementById('modalEditarCita').classList.remove('show');
-        }
-
-        function abrirModalNuevaCita() {
-            document.getElementById('formNuevaCita').reset();
-            document.getElementById('nuevo_descripcion').value = '';
-            document.getElementById('modalNuevaCita').classList.add('show');
-        }
-
-        function cerrarModalNuevaCita() {
-            document.getElementById('modalNuevaCita').classList.remove('show');
-        }
-
-        function abrirModalVerCita(id_cita, nombre_rep, apellido_rep, dni_rep, cargo_rep,
-            nombre_minera, ruc_minera, direccion_minera, telefono_minera, correo_minera,
-            nombre_sus, apellido_sus, dni_sus, cargo_sus,
-            fecha, hora, fecha_nue, hora_nue, estado, descripcion) {
-
-            // Información del representante principal
-            document.getElementById('ver_nombre_rep').textContent = `${nombre_rep} ${apellido_rep}`;
-            document.getElementById('ver_dni_rep').textContent = dni_rep || 'No especificado';
-            document.getElementById('ver_cargo_rep').textContent = cargo_rep || 'No especificado';
-
-            // Información de la minera
-            document.getElementById('ver_nombre_minera').textContent = nombre_minera || 'No especificado';
-            document.getElementById('ver_ruc_minera').textContent = ruc_minera || 'No especificado';
-            document.getElementById('ver_direccion_minera').textContent = direccion_minera || 'No especificado';
-            document.getElementById('ver_telefono_minera').textContent = telefono_minera || 'No especificado';
-            document.getElementById('ver_correo_minera').textContent = correo_minera || 'No especificado';
-
-            // Información del representante sustituto
-            if (nombre_sus && apellido_sus) {
-                document.getElementById('ver_sustituto_card').style.display = 'block';
-                document.getElementById('ver_no_sustituto').style.display = 'none';
-                document.getElementById('ver_nombre_sus').textContent = `${nombre_sus} ${apellido_sus}`;
-                document.getElementById('ver_dni_sus').textContent = dni_sus || 'No especificado';
-                document.getElementById('ver_cargo_sus').textContent = cargo_sus || 'No especificado';
-            } else {
-                document.getElementById('ver_sustituto_card').style.display = 'none';
-                document.getElementById('ver_no_sustituto').style.display = 'block';
-            }
-
-            // Información de fechas y horas
-            if (fecha && fecha !== 'null') {
-                const fechaFormateada = new Date(fecha).toLocaleDateString('es-ES', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                });
-                document.getElementById('ver_fecha_original').textContent = fechaFormateada;
-            } else {
-                document.getElementById('ver_fecha_original').textContent = 'No especificado';
-            }
-
-            document.getElementById('ver_hora_original').textContent = hora || 'No especificado';
-
-            // Fechas y horas nuevas (si existen)
-            if (fecha_nue && fecha_nue !== 'null' && fecha_nue !== '') {
-                document.getElementById('ver_fecha_nueva_row').style.display = 'flex';
-                const fechaNuevaFormateada = new Date(fecha_nue).toLocaleDateString('es-ES', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                });
-                document.getElementById('ver_fecha_nueva').textContent = fechaNuevaFormateada;
-            } else {
-                document.getElementById('ver_fecha_nueva_row').style.display = 'none';
-            }
-
-            if (hora_nue && hora_nue !== 'null' && hora_nue !== '') {
-                document.getElementById('ver_hora_nueva_row').style.display = 'flex';
-                document.getElementById('ver_hora_nueva').textContent = hora_nue;
-            } else {
-                document.getElementById('ver_hora_nueva_row').style.display = 'none';
-            }
-
-            // Descripción
-            document.getElementById('ver_descripcion').textContent = descripcion ||
-                'No se añadió descripción para esta cita';
-
-            // Estado de la cita
-            const estadoBadge = document.getElementById('ver_estado_badge');
-            estadoBadge.textContent = estado.charAt(0).toUpperCase() + estado.slice(1);
-            estadoBadge.className = `estado-badge estado-${estado}`;
-
-            // Mostrar modal
-            document.getElementById('modalVerCita').classList.add('show');
-        }
-
-        function cerrarModalVerCita() {
-            document.getElementById('modalVerCita').classList.remove('show');
-        }
-    </script>
-
-
 </body>
 
 </html>

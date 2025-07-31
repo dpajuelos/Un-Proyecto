@@ -11,13 +11,13 @@ use Illuminate\Database\Eloquent\Model;
 
 /**
  * Class Trabajadore
- * 
+ *
  * @property int $id_trabajador
  * @property string $dni
  * @property int $id_usuario
  * @property int $id_cargo
  * @property int $id_espe
- * 
+ *
  * @property Persona $persona
  * @property Usuario $usuario
  * @property Cargo $cargo
@@ -47,22 +47,22 @@ class Trabajadore extends Model
 
 	public function persona()
 	{
-		return $this->belongsTo(Persona::class, 'dni');
+		return $this->belongsTo(Persona::class, 'dni', 'dni');
 	}
 
 	public function usuario()
 	{
-		return $this->belongsTo(Usuario::class, 'id_usuario');
+		return $this->belongsTo(Usuario::class, 'id_usuario', 'id_usuario');
 	}
 
 	public function cargo()
 	{
-		return $this->belongsTo(Cargo::class, 'id_cargo');
+		return $this->belongsTo(Cargo::class, 'id_cargo', 'id_cargo');
 	}
 
 	public function especializacion()
 	{
-		return $this->belongsTo(Especializacion::class, 'id_espe');
+		return $this->belongsTo(Especializacion::class, 'id_espe', 'id_espe');
 	}
 
 	public function trabajador_turnos()
